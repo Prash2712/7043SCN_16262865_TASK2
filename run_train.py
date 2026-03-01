@@ -1,4 +1,4 @@
-_# -*- coding: utf-8 -*-
+
 """
 Main entry point for running the training process for Variant 3.
 
