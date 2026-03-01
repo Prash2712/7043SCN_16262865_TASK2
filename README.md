@@ -107,8 +107,33 @@ To verify that all source files are correctly in place, you can run the self-che
 ```bash
 python3 scripts/self_check.py
 ```
+## 5. Experimental Pipeline
 
-## 5. Expected Outputs
+### Training
+
+Two agents were trained:
+
+1. PPO Baseline (sparse rewards)
+2. PPO + Domain-Knowledge Reward Shaping
+
+Training includes:
+
+- identical hyperparameters for controlled comparison,
+- consistent random seeds,
+- logging of per-episode metrics.
+
+### Evaluation
+
+The trained reward-shaped agent is evaluated against:
+
+- Random opponent
+- Heuristic Agent V1
+- Heuristic Agent V2
+
+Each evaluation consists of multiple matches to reduce variance and allow meaningful comparison.
+
+---
+## 6. Outputs
 
 After running the scripts, the `outputs/` directory will be populated as follows:
 
@@ -122,4 +147,4 @@ After running the scripts, the `outputs/` directory will be populated as follows
     -   `logs/evaluation_log.csv`: Per-match evaluation data.
 -   `outputs/evaluation_summary_plots/`: Bar charts comparing the shaped agent's performance against all opponent types.
 
-This comprehensive output structure allows for a thorough analysis of the agent's learning process and final performance, as required for a distinction-level submission.
+## 7. Video Link :
