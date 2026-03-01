@@ -1,0 +1,70 @@
+# ==============================================================================
+# PROJECT CONFIGURATION: PPO for Chef's Hat Gym (Variant 3)
+# STUDENT ID: 16262865
+# ==============================================================================
+
+# -- Experiment Settings -------------------------------------------------------
+project_name: "ppo_variant3_reward_shaping"
+seed: 42
+
+# -- Environment Settings ------------------------------------------------------
+env:
+  env_name: "ChefsHat-v1"
+  # Opponent types: Random, Heuristic_V1, Heuristic_V2
+  opponent_type: "Random"
+
+# -- PPO Algorithm Settings ----------------------------------------------------
+ppo:
+  # --- Core Hyperparameters ---
+  learning_rate: 0.0003
+  gamma: 0.99           # Discount factor for future rewards
+  gae_lambda: 0.95      # Lambda for Generalized Advantage Estimation (GAE)
+  clip_epsilon: 0.2     # Epsilon for PPO clipping
+  entropy_coef: 0.01    # Coefficient for entropy bonus (encourages exploration)
+  vf_coef: 0.5          # Coefficient for value function loss
+  max_grad_norm: 0.5    # Max norm for gradient clipping
+
+  # --- Training Loop ---
+  epochs: 10            # Number of optimization epochs per rollout
+  batch_size: 64        # Batch size for optimization
+  rollout_steps: 2048   # Number of steps to collect per rollout before updating
+
+# -- Training Settings ---------------------------------------------------------
+training:
+  total_matches: 1000   # Total number of matches to play for training
+  log_interval: 10      # Log progress every N matches
+  save_interval: 100    # Save model weights every N matches
+
+# -- Evaluation Settings -------------------------------------------------------
+evaluation:
+  total_matches: 200    # Number of matches to play for evaluation
+  # Path to the trained model weights. If null, uses untrained agent.
+  # Example: "outputs/ppo_variant3_reward_shaping/models/actor_final.pt"
+  actor_model_path: null
+  critic_model_path: null
+
+# -- Variant 3: Reward Shaping Settings ----------------------------------------
+reward_shaping:
+  # Set to true to enable reward shaping, false for sparse reward baseline
+  enabled: true
+
+  # --- Shaping Strategy Coefficients ---
+  # These values are added to/subtracted from the reward at each step.
+  # Set a coefficient to 0 to disable that specific shaping strategy.
+
+  # 1. High Card Penalty: Penalizes holding high-value cards at the end of a round.
+  #    Penalty = high_card_penalty_coef * (sum of values of cards > 10 in hand)
+  high_card_penalty_coef: -0.01
+
+  # 2. Card Play Bonus: Rewards playing high-value cards.
+  #    Bonus = card_play_bonus_coef * (value of card played if > 8)
+  card_play_bonus_coef: 0.02
+
+  # 3. Hand Strength Bonus: Rewards having a strong hand (many cards of the same suit).
+  #    Bonus = hand_strength_bonus_coef * (max count of cards in one suit - 2)
+  hand_strength_bonus_coef: 0.005
+
+# -- Output Settings -----------------------------------------------------------
+outputs:
+  # Directory to save all outputs (logs, models, plots)
+  output_dir: "outputs"

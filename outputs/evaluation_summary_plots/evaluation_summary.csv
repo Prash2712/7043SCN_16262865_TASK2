@@ -1,0 +1,4 @@
+Opponent,Win Rate (Baseline),Win Rate (Shaped),Avg Score (Shaped),Improvement
+vs Random,26.0%,38.0%,0.502,+12.0%
+vs Heuristic_V1,20.0%,32.0%,0.456,+12.0%
+vs Heuristic_V2,17.0%,27.0%,0.456,+10.0%
