@@ -1,150 +1,116 @@
-# PPO with Domain-Knowledge Reward Shaping for Chef's Hat Gym
+# PPO with Domain-Knowledge Reward Shaping
 
-**Student ID:** 16262865
-**Course Task:** 7043SCN - Task 2
-**Variant:** 3 - Reward Shaping with Domain Knowledge
+A reinforcement-learning project investigating whether **domain-informed reward shaping** can provide a richer learning signal than sparse end-of-game rewards in the multi-agent Chef's Hat environment.
 
----
+The implementation uses **Proximal Policy Optimization (PPO)** with an Actor–Critic architecture and separates reward shaping, training, evaluation, configuration and metrics into reusable modules.
 
-## 1. Project Overview
+## Technical focus
 
-This project presents a high-quality implementation of a Proximal Policy Optimization (PPO) agent designed to master the card game *Chef's Hat*. The core of this work focuses on **Variant 3: Reward Shaping with Domain Knowledge**, where the standard sparse, end-of-game reward is augmented with dense, intermediate rewards derived from game-specific heuristics. 
+- Proximal Policy Optimization (PPO-Clip)
+- Actor–Critic policy/value networks
+- Sparse-reward reinforcement learning
+- Domain-knowledge reward shaping
+- Controlled baseline-vs-shaped comparisons
+- Config-driven experiments
+- Multi-opponent evaluation
+- Reproducible random seeds and logging
 
-The objective is to demonstrate that by providing the agent with this domain knowledge, it can learn a more effective policy faster and more reliably than an agent learning from a sparse reward signal alone. The repository includes a full training and evaluation pipeline, ablation studies, and comprehensive documentation, all built to a distinction-level academic standard.
+## Repository structure
 
-## 2. Repository Structure
-
-The repository is organized into a modular and professional structure to ensure clarity, maintainability, and ease of use.
-
-```
-/task2_project_16262865
+```text
+.
 ├── configs/
-│   └── config.yaml             # All hyperparameters and settings
+│   └── config.yaml
 ├── ppo/
-│   ├── __init__.py
-│   ├── model.py                # Actor and Critic network architectures
-│   ├── ppo_agent.py            # Core PPO agent class (inherits from BaseAgent)
-│   └── replay_buffer.py        # On-policy replay buffer for rollouts
+│   ├── model.py
+│   ├── ppo_agent.py
+│   └── replay_buffer.py
 ├── reward_shaping/
-│   ├── __init__.py
-│   └── shapers.py              # Reward shaping classes (Base, DomainKnowledge, NoOp)
+│   └── shapers.py
 ├── training/
-│   ├── __init__.py
-│   └── trainer.py              # Main training loop orchestration
+│   └── trainer.py
 ├── evaluation/
-│   ├── __init__.py
-│   └── evaluator.py            # Evaluation loop orchestration
+│   └── evaluator.py
 ├── utils/
-│   ├── __init__.py
-│   ├── plotting.py             # Utilities for generating result plots
-│   └── metrics.py              # Classes for logging training/evaluation data
+│   ├── plotting.py
+│   └── metrics.py
 ├── scripts/
-│   └── self_check.py           # Script to verify project structure
-├── outputs/                    # Directory for all generated files (created on run)
-├── run_train.py                # === Main script to run training ===
-├── run_eval.py                 # === Main script to run evaluation ===
-├── requirements.txt            # Project dependencies
-└── README.md                   # This file
+│   └── self_check.py
+├── run_train.py
+├── run_eval.py
+├── requirements.txt
+└── README.md
 ```
 
-## 3. Methodology
+## Approach
 
-### 3.1. Core Algorithm: Proximal Policy Optimization (PPO)
+### Baseline
 
-The agent is built upon the **PPO-Clip** algorithm, a state-of-the-art on-policy reinforcement learning method. It uses an Actor-Critic architecture:
+The baseline agent learns from the environment's sparse outcome signal without additional domain-informed shaping.
 
--   **Actor (Policy Network):** Learns which action to take in a given state.
--   **Critic (Value Network):** Estimates the value of being in a given state.
+### Domain-knowledge shaping
 
-PPO optimizes the policy by taking small, controlled steps, using a clipped objective function to prevent destructively large updates. This ensures stable and reliable learning.
+The shaped agent augments the environment reward with intermediate signals designed around game-state information. The implementation exposes these coefficients through configuration so the shaping design can be varied without rewriting the learning loop.
 
-### 3.2. Variant 3: Reward Shaping
+Examples include incentives or penalties associated with card-play efficiency and hand state.
 
-To address the challenge of sparse rewards (only receiving a signal at the end of a match), we introduce a `DomainKnowledgeShaper`. This module injects intermediate rewards at each step based on expert heuristics. The following shaping functions are implemented and can be tuned in `configs/config.yaml`:
+The purpose is not to assume that hand-crafted shaping is automatically superior. The experiment is structured so the shaped agent can be compared against the sparse-reward baseline under otherwise controlled settings.
 
-| Shaping Function       | Description                                                                                             | Default Coef. |
-| ---------------------- | ------------------------------------------------------------------------------------------------------- | :-----------: |
-| **High Card Penalty**  | Penalizes the agent for holding high-value cards at the end of a round, as this is a losing strategy.     |    `-0.01`    |
-| **Card Play Bonus**    | Rewards the agent for playing high-value cards, which is often a strategically sound move to win tricks. |    `+0.02`    |
-| **Hand Strength Bonus**| Rewards the agent for collecting multiple cards of the same suit, a key strategy for controlling the game. |   `+0.005`    |
+## PPO design
 
-These dense rewards provide a much richer learning signal, guiding the agent towards strategically sound behaviors far more effectively than the sparse reward alone.
+PPO updates the policy using a clipped surrogate objective to constrain destructive policy changes. The implementation follows the standard Actor–Critic pattern:
 
-## 4. How to Run
+- **Actor:** produces the action policy
+- **Critic:** estimates state value
+- **Rollout buffer:** stores on-policy trajectories for PPO updates
 
-### 4.1. Setup
+This architecture is appropriate for comparing learning behaviour under different reward definitions while keeping the core policy optimiser fixed.
 
-1.  **Clone Chef's Hat Gym:** The project requires the source code of the environment. Clone it into the `/home/ubuntu/` directory.
-    ```bash
-    git clone https://github.com/pablovin/ChefsHatGYM.git /home/ubuntu/ChefsHatGYM
-    ```
+## Running the project
 
-2.  **Install Dependencies:** Install the required Python packages.
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-### 4.2. Training
-
-To run the full training process for both the baseline and the reward-shaped agent, execute the main training script. This will train each agent for 1,000 matches and save all models, logs, and plots to the `outputs/` directory.
+Install the project dependencies and the Chef's Hat Gym environment required by the implementation, then run:
 
 ```bash
-python3 run_train.py
+python run_train.py
 ```
 
-### 4.3. Evaluation
-
-After training is complete, run the evaluation script. This will load the trained reward-shaped agent and test it against three different opponent types (Random, Heuristic V1, Heuristic V2) for 200 matches each.
+For evaluation:
 
 ```bash
-python3 run_eval.py
+python run_eval.py
 ```
 
-### 4.4. Self-Check
-
-To verify that all source files are correctly in place, you can run the self-check script.
+A structural self-check is also provided:
 
 ```bash
-python3 scripts/self_check.py
+python scripts/self_check.py
 ```
-## 5. Experimental Pipeline
 
-### Training
+## Evaluation design
 
-Two agents were trained:
+The project is designed to compare learned behaviour across several opponent types, including random and heuristic agents. Training and evaluation outputs are written to the generated `outputs/` structure when experiments are run.
 
-1. PPO Baseline (sparse rewards)
-2. PPO + Domain-Knowledge Reward Shaping
+This README intentionally does **not** publish performance figures that are not committed as independently inspectable result artifacts in the repository.
 
-Training includes:
+## Why this project matters
 
-- identical hyperparameters for controlled comparison,
-- consistent random seeds,
-- logging of per-episode metrics.
+Sparse and delayed rewards are a central reinforcement-learning difficulty: a terminal outcome may provide too little information about which earlier decisions were useful. Reward shaping can improve the density of the learning signal, but poorly designed shaping can also bias behaviour.
 
-### Evaluation
+This project provides a modular setting for examining that trade-off with a modern policy-gradient method.
 
-The trained reward-shaped agent is evaluated against:
+## Technical stack
 
-- Random opponent
-- Heuristic Agent V1
-- Heuristic Agent V2
+`Python` · `PyTorch` · `PPO` · `Actor–Critic` · `YAML configuration` · `NumPy` · `pandas` · `Matplotlib`
 
-Each evaluation consists of multiple matches to reduce variance and allow meaningful comparison.
+## Academic provenance
 
----
-## 6. Outputs
+Originally developed for Coventry University module **7043SCN — Generative AI and Reinforcement Learning**, using the assigned reward-shaping variant.
 
-After running the scripts, the `outputs/` directory will be populated as follows:
+A demonstration video associated with the original coursework is available in the project history/documentation.
 
--   `outputs/ppo_variant3_baseline/`: Results for the agent trained with sparse rewards.
-    -   `logs/training_log.csv`: Per-match training data.
-    -   `models/`: Saved model weights (`.pt` files).
-    -   `plots/`: Reward curve and win rate plots.
--   `outputs/ppo_variant3_reward_shaping/`: Results for the agent trained with shaped rewards.
-    -   (Same structure as above)
--   `outputs/eval_vs_<OpponentType>/`: Evaluation results against each opponent.
-    -   `logs/evaluation_log.csv`: Per-match evaluation data.
--   `outputs/evaluation_summary_plots/`: Bar charts comparing the shaped agent's performance against all opponent types.
+## Author
 
-## 7. Video Link : https://drive.google.com/file/d/1m9-e5p4WuzfH5auawsShsdPjDujWJLJZ/view?usp=sharing
+**Prasanth Balisetty**  
+Data Science & Machine Learning
+
+[GitHub](https://github.com/Prash2712)
