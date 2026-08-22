@@ -14,8 +14,12 @@ def build_features(frame: pd.DataFrame) -> pd.DataFrame:
     result = frame.sort_values("timestamp").set_index("timestamp").copy()
     target = result[TARGET].astype(float)
 
+    lag_columns: list[str] = []
     for lag in (1, 2, 48, 96, 336):
-        result[f"demand_lag_{lag}"] = target.shift(lag)
+        column = f"demand_lag_{lag}"
+        result[column] = target.shift(lag)
+        lag_columns.append(column)
+
     result["demand_roll_mean_48"] = target.shift(1).rolling(48).mean()
     result["demand_roll_std_48"] = target.shift(1).rolling(48).std()
     result["demand_roll_mean_336"] = target.shift(1).rolling(336).mean()
@@ -29,10 +33,16 @@ def build_features(frame: pd.DataFrame) -> pd.DataFrame:
     result["month"] = result.index.month
     result["is_weekend"] = (result.index.dayofweek >= 5).astype(int)
 
-    # Contemporary exogenous outturns are excluded by default because a day-ahead
-    # service would not know their realised future values. Forecast versions can be
-    # joined later if the deployment contract makes them available at prediction time.
-    return result.dropna().reset_index()
+    required_history = [
+        TARGET,
+        *lag_columns,
+        "demand_roll_mean_48",
+        "demand_roll_std_48",
+        "demand_roll_mean_336",
+    ]
+    # Optional realised outturn fields are deliberately not part of the drop condition.
+    # The day-ahead model does not use them unless a future forecast contract is added.
+    return result.dropna(subset=required_history).reset_index()
 
 
 def feature_columns(frame: pd.DataFrame) -> list[str]:
